@@ -1,0 +1,95 @@
+{{define "event"}}
+<div style="display: flex; margin-bottom: 1em">
+  <form action="/occur" method="POST" style="margin-right: 1em">
+    <input type="hidden" name="id" value="{{.Id}}" />
+    <input type="submit" value="do" />
+  </form>
+  <details>
+    <summary style="list-style: none;">{{ .TimelinessIndicator }} {{.Title}}: {{.HowLong}}</summary>
+    <p>{{ .LastDone }}</p>
+  </details>
+</div>
+{{end}}
+
+<html lang="en">
+  <head>
+    <title>elapsed</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="How long has it been?" />
+  </head>
+
+  <body>
+    <a href="/new">new</a>
+
+    {{ $events := index .Events "daily" }}
+    {{ if $events }}
+    <div>
+      <h2>daily</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events := index .Events "every-other-day" }}
+    {{ if $events }}
+    <div>
+      <h2>every other day</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events = index .Events "weekly" }}
+    {{ if $events }}
+    <div>
+      <h2>weekly</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events = index .Events "monthly" }}
+    {{ if $events }}
+    <div>
+      <h2>monthly</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events = index .Events "quarterly" }}
+    {{ if $events }}
+    <div>
+      <h2>quarterly</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events = index .Events "bi-annually" }}
+    {{ if $events }}
+    <div>
+      <h2>bi-annually</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+
+    {{ $events = index .Events "annually" }}
+    {{ if $events }}
+    <div>
+      <h2>annually</h2>
+      {{range $events}}
+      {{template "event" .}}
+      {{end}}
+    </div>
+    {{end}}
+  </body>
+</html>

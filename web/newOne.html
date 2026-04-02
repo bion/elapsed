@@ -1,0 +1,42 @@
+<html lang="en">
+  <head>
+    <title>elapsed | new</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="How long has it been?" />
+  </head>
+
+  <body>
+    <div>
+      <form action="/create" method="POST">
+        <label for="title">title</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          size="20"
+        />
+
+        <select
+          name="frequency"
+          id="frequency"
+          required
+        >
+          <option value="daily">daily</option>
+          <option value="every-other-day">every-other-day</option>
+          <option value="weekly">weekly</option>
+          <option value="monthly">monthly</option>
+          <option value="quarterly">quarterly</option>
+          <option value="bi-annually">bi-annually</option>
+          <option value="annually">annually</option>
+        </select>
+
+        <br />
+        <br />
+
+        <input type="submit" value="create" />
+      </form>
+    </div>
+  </body>
+</html>

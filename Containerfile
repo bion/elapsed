@@ -1,0 +1,19 @@
+FROM golang:1.26.1-alpine AS builder
+
+WORKDIR /app
+RUN apk add build-base
+COPY main.go go.mod go.sum ./
+RUN go mod download
+RUN CGO_ENABLED=1 GOOS=linux go build -o main .
+
+FROM golang:1.26.1-alpine
+RUN apk add sqlite
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/main .
+COPY start.sh .
+COPY bin/ /root/bin
+COPY db/ /root/db
+COPY web/ /root/web
+EXPOSE 8080
+CMD ["./start.sh"]
