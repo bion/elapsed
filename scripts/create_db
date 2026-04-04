@@ -2,4 +2,4 @@
 
 db_file_path=${DB_FILE_PATH:-elapsed.db}
 
-sqlite3 "${db_file_path}" < db/create.sql
+sqlite3 "${db_file_path}" < internal/db/create.sql

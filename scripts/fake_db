@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-sqlite3 elapsed.db < db/fake.sql
+sqlite3 elapsed.db < internal/db/fake.sql
