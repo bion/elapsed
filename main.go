@@ -1,15 +1,13 @@
 package main
 
 import (
-	"database/sql"
+	"bionhart.com/elapsed/internal/db"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"html/template"
 	"log"
 	"maps"
 	"math"
 	"net/http"
-	"os"
 	"slices"
 	"time"
 )
@@ -77,25 +75,6 @@ var (
 		},
 	}
 )
-
-var db *sql.DB
-
-func init() {
-	dbPath, exists := os.LookupEnv("DB_FILE_PATH")
-	if !exists {
-		dbPath = "./elapsed.db"
-	}
-
-	var err error
-	db, err = sql.Open("sqlite3", dbPath)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db.Exec("PRAGMA foreign_keys = ON;")
-	log.Printf("db connection opened with file %s", dbPath)
-}
 
 func (e Event) LastDone() string {
 	if e.HowLongTimeUnixMillis == 0 {
@@ -172,7 +151,7 @@ func (e Event) TimelinessStatus() string {
 }
 
 func getEvents() map[string]*[]Event {
-	eventRows, err := db.Query("SELECT * FROM events")
+	eventRows, err := db.Db.Query("SELECT * FROM events")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -187,7 +166,7 @@ func getEvents() map[string]*[]Event {
 		events[e.Id] = e
 	}
 
-	occRows, err := db.Query(`
+	occRows, err := db.Db.Query(`
 SELECT event_id, time_unix_millis FROM (
   SELECT event_id, time_unix_millis, ROW_NUMBER()
   OVER (PARTITION BY event_id ORDER BY time_unix_millis DESC) AS rn
@@ -250,7 +229,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Create Event: title=%s, frequency=%s", title, frequency)
 
-	_, err := db.Exec("INSERT INTO events (title, frequency) VALUES (?, ?)", title, frequency)
+	_, err := db.Db.Exec("INSERT INTO events (title, frequency) VALUES (?, ?)", title, frequency)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -262,7 +241,7 @@ func occur(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	timeUnixMillis := time.Now().UnixMilli()
 
-	_, err := db.Exec("INSERT INTO occurrences VALUES (?, ?)", id, timeUnixMillis)
+	_, err := db.Db.Exec("INSERT INTO occurrences VALUES (?, ?)", id, timeUnixMillis)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -301,6 +280,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	db.Init()
+	
 	http.HandleFunc("/new", newOne)
 	http.HandleFunc("/create", create)
 	http.HandleFunc("/occur", occur)
@@ -309,8 +290,5 @@ func main() {
 	log.Print("starting server on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
-	defer func() {
-		db.Close()
-		log.Print("closed db connection")
-	}()
+	defer db.Teardown()
 }
