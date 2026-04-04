@@ -12,7 +12,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/main .
 COPY start.sh .
-COPY bin/ /root/bin
+COPY scripts/ /root/scripts
 COPY db/ /root/db
 COPY web/ /root/web
 EXPOSE 8080
