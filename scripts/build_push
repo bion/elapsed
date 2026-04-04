@@ -2,5 +2,9 @@
 
 set -e
 
-podman build --platform linux/amd64,linux/arm64 -t docker.io/bion/elapsed:latest .
+podman build \
+       --platform linux/amd64,linux/arm64 \
+       -t docker.io/bion/elapsed:latest  \
+       -f build/Containerfile \
+       .
 podman push docker.io/bion/elapsed:latest
