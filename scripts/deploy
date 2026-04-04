@@ -1,0 +1,3 @@
+#! /usr/bin/env bash
+
+ssh doro "kubectl delete -f ~/homelab/elapsed/pod.yaml && kubectl create -f ~/homelab/elapsed/pod.yaml"

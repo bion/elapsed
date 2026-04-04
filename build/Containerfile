@@ -2,7 +2,8 @@ FROM golang:1.26.1-alpine AS builder
 
 WORKDIR /app
 RUN apk add build-base
-COPY main.go go.mod go.sum ./
+COPY internal /app/internal
+COPY main.go go.mod go.sum /app
 RUN go mod download
 RUN CGO_ENABLED=1 GOOS=linux go build -o main .
 
@@ -13,7 +14,7 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 COPY build/start.sh .
 COPY scripts/ /root/scripts
-COPY db/ /root/db
+COPY internal/db/ /root/db
 COPY web/ /root/web
 EXPOSE 8080
 CMD ["./start.sh"]
