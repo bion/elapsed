@@ -3,6 +3,7 @@ package main
 import (
 	"bionhart.com/elapsed/internal"
 	"bionhart.com/elapsed/internal/db"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -66,16 +67,32 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		next.ServeHTTP(w, r)
+
+		log.Printf(
+			"%s %s %s %s",
+			r.Method,
+			r.URL.Path,
+			fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
+			r.RemoteAddr)
+	})
+}
+
 func main() {
 	db.Init()
 
-	http.HandleFunc("/new", newOne)
-	http.HandleFunc("/create", create)
-	http.HandleFunc("/occur", occur)
-	http.HandleFunc("/", index)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/new", newOne)
+	mux.HandleFunc("/create", create)
+	mux.HandleFunc("/occur", occur)
+	mux.HandleFunc("/", index)
 
 	log.Print("starting server on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", logRequest(mux)))
 
 	defer db.Teardown()
 }
