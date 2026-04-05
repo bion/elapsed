@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: elapsed-backup
+spec:
+  schedule: "0 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backblaze-cli-elapsed-backup
+            image: backblazeit/b2:4.6.0
+            imagePullPolicy: IfNotPresent
+            command:
+            - b2v4
+            - file
+            - upload
+            - bionj-elapsed-backup
+            - /data/elapsed.db
+            - elapsed.db
+            volumeMounts:
+              - name: volv
+                mountPath: /data
+            env:
+            - name: B2_APPLICATION_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: elapsed-b2-backup-key
+                  key: keyID
+            - name: B2_APPLICATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: elapsed-b2-backup-key
+                  key: applicationKey
+          volumes:
+            - name: volv
+              persistentVolumeClaim:
+                claimName: elapsed-local-path-pvc
+          restartPolicy: Never
