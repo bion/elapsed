@@ -33,9 +33,9 @@ var (
 
 	freqSpecs = map[string]FreqSpec{
 		"daily": FreqSpec{
-			GoodThreshold:       24,
-			BorderlineThreshold: 36,
-			ExpiredThreshold:    48,
+			GoodThreshold:       20,
+			BorderlineThreshold: 28,
+			ExpiredThreshold:    36,
 		},
 		"every-other-day": FreqSpec{
 			GoodThreshold:       48,
