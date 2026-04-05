@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: elapsed
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: elapsed-singleton
+    app.kubernetes.io/name: elapsed
+    app.kubernetes.io/version: 1.0.0
+  name: elapsed
+  namespace: default
+spec:
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: elapsed-singleton
+    app.kubernetes.io/name: elapsed
+    app.kubernetes.io/version: 1.0.0
+  sessionAffinity: None
+  type: ClusterIP
