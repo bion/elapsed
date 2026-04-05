@@ -10,17 +10,54 @@ import (
 	"time"
 )
 
-type Page struct {
-	Events map[string]*[]internal.Event
+type EventFormPageModel struct {
+	Event      internal.Event
+	Endpoint   string
+	SubmitText string
 }
 
 func newOne(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("web/newOne.html")
+	t, err := template.ParseFiles("web/eventForm.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	t.Execute(w, nil)
+	t.Execute(w, &EventFormPageModel{
+		Endpoint:   "/create",
+		SubmitText: "create",
+	})
+}
+
+func edit(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("web/eventForm.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	eventId := r.PathValue("id")
+	event := &internal.Event{}
+	err = db.Db.QueryRow("SELECT id, title, frequency FROM events WHERE id = ?", eventId).Scan(&event.Id, &event.Title, &event.Frequency)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t.Execute(w, &EventFormPageModel{
+		Event:      *event,
+		Endpoint:   fmt.Sprintf("/events/%d", event.Id),
+		SubmitText: "update",
+	})
+}
+
+func update(w http.ResponseWriter, r *http.Request) {
+	eventId := r.PathValue("id")
+	title := r.FormValue("title")
+	frequency := r.FormValue("frequency")
+	_, err := db.Db.Exec("UPDATE events SET title = ?, frequency = ? WHERE id = ?", title, frequency, eventId)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
@@ -49,10 +86,14 @@ func occur(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+type IndexPageModel struct {
+	Events map[string]*[]internal.Event
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	events := internal.GetEvents()
 
-	p := &Page{
+	p := &IndexPageModel{
 		Events: events,
 	}
 
@@ -86,10 +127,12 @@ func main() {
 	db.Init()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/new", newOne)
-	mux.HandleFunc("/create", create)
-	mux.HandleFunc("/occur", occur)
-	mux.HandleFunc("/", index)
+	mux.HandleFunc("GET /new", newOne)
+	mux.HandleFunc("GET /events/{id}/edit", edit)
+	mux.HandleFunc("POST /events/{id}", update)
+	mux.HandleFunc("POST /create", create)
+	mux.HandleFunc("POST /occur", occur)
+	mux.HandleFunc("GET /", index)
 
 	log.Print("starting server on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", logRequest(mux)))

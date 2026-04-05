@@ -6,7 +6,8 @@
   </form>
   <details>
     <summary style="list-style: none;">{{ .TimelinessIndicator }} {{.Title}}: {{.HowLong}}</summary>
-    <p>{{ .LastDone }}</p>
+    <a href="/events/{{ .Id }}/edit">edit</a>
+    <p>Last done {{ .LastDone }}</p>
   </details>
 </div>
 {{end}}

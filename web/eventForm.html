@@ -1,6 +1,6 @@
 <html lang="en">
   <head>
-    <title>elapsed | new</title>
+    <title>elapsed</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="How long has it been?" />
@@ -8,12 +8,13 @@
 
   <body>
     <div>
-      <form action="/create" method="POST">
+      <form action="{{ .Endpoint }}" method="POST">
         <label for="title">title</label>
         <input
           type="text"
           id="title"
           name="title"
+          value="{{ .Event.Title }}"
           required
           size="20"
         />
@@ -21,6 +22,7 @@
         <select
           name="frequency"
           id="frequency"
+          value="{{ .Event.Frequency }}"
           required
         >
           <option value="daily">daily</option>
@@ -35,7 +37,7 @@
         <br />
         <br />
 
-        <input type="submit" value="create" />
+        <input type="submit" value="{{ .SubmitText }}" />
       </form>
     </div>
   </body>
