@@ -87,14 +87,16 @@ func occur(w http.ResponseWriter, r *http.Request) {
 }
 
 type IndexPageModel struct {
-	Events map[string]*[]internal.Event
+	Events          map[string]*[]internal.Event
+	SortedFreqSpecs []internal.FreqSpec
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
 	events := internal.GetEvents()
 
 	p := &IndexPageModel{
-		Events: events,
+		Events:          events,
+		SortedFreqSpecs: internal.SortedFreqSpecs(),
 	}
 
 	t, err := template.ParseFiles("web/index.html")

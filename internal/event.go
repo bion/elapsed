@@ -23,6 +23,7 @@ type Occurrence struct {
 }
 
 type FreqSpec struct {
+	Name                string
 	GoodThreshold       float64
 	BorderlineThreshold float64
 	ExpiredThreshold    float64
@@ -33,42 +34,55 @@ var (
 
 	freqSpecs = map[string]FreqSpec{
 		"daily": FreqSpec{
+			Name:                "daily",
 			GoodThreshold:       20,
 			BorderlineThreshold: 28,
 			ExpiredThreshold:    36,
 		},
 		"every-other-day": FreqSpec{
+			Name:                "every-other-day",
 			GoodThreshold:       48,
 			BorderlineThreshold: 60,
 			ExpiredThreshold:    72,
 		},
 		"weekly": FreqSpec{
+			Name:                "weekly",
 			GoodThreshold:       168,
 			BorderlineThreshold: 192,
 			ExpiredThreshold:    214,
 		},
 		"monthly": FreqSpec{
+			Name:                "monthly",
 			GoodThreshold:       744,
 			BorderlineThreshold: 800,
 			ExpiredThreshold:    900,
 		},
 		"quarterly": FreqSpec{
+			Name:                "quarterly",
 			GoodThreshold:       2160,
 			BorderlineThreshold: 2400,
 			ExpiredThreshold:    2700,
 		},
 		"bi-annually": FreqSpec{
+			Name:                "bi-annually",
 			GoodThreshold:       4416,
 			BorderlineThreshold: 4600,
 			ExpiredThreshold:    4800,
 		},
 		"annually": FreqSpec{
+			Name:                "annually",
 			GoodThreshold:       8760,
 			BorderlineThreshold: 9500,
 			ExpiredThreshold:    1100,
 		},
 	}
 )
+
+func SortedFreqSpecs() []FreqSpec {
+	specs := slices.Collect(maps.Values(freqSpecs))
+	slices.SortFunc(specs, func(a, b FreqSpec) int { return int(a.GoodThreshold - b.GoodThreshold) })
+	return specs
+}
 
 func (e Event) LastDone() string {
 	if e.HowLongTimeUnixMillis == 0 {

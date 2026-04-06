@@ -23,74 +23,16 @@
   <body>
     <a href="/new">new</a>
 
-    {{ $events := index .Events "daily" }}
+    {{ range $fs := .SortedFreqSpecs }}
+    {{ $events := index $.Events $fs.Name }}
     {{ if $events }}
     <div>
-      <h2>daily</h2>
+      <h2>{{ $fs.Name }}</h2>
       {{range $events}}
       {{template "event" .}}
       {{end}}
     </div>
     {{end}}
-
-    {{ $events := index .Events "every-other-day" }}
-    {{ if $events }}
-    <div>
-      <h2>every other day</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
-    {{end}}
-
-    {{ $events = index .Events "weekly" }}
-    {{ if $events }}
-    <div>
-      <h2>weekly</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
-    {{end}}
-
-    {{ $events = index .Events "monthly" }}
-    {{ if $events }}
-    <div>
-      <h2>monthly</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
-    {{end}}
-
-    {{ $events = index .Events "quarterly" }}
-    {{ if $events }}
-    <div>
-      <h2>quarterly</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
-    {{end}}
-
-    {{ $events = index .Events "bi-annually" }}
-    {{ if $events }}
-    <div>
-      <h2>bi-annually</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
-    {{end}}
-
-    {{ $events = index .Events "annually" }}
-    {{ if $events }}
-    <div>
-      <h2>annually</h2>
-      {{range $events}}
-      {{template "event" .}}
-      {{end}}
-    </div>
     {{end}}
   </body>
 </html>
