@@ -8,6 +8,18 @@
     <summary style="list-style: none;">{{ .TimelinessIndicator }} {{.Title}}: {{.HowLong}}</summary>
     <a href="/events/{{ .Id }}/edit">edit</a>
     <p>Last done {{ .LastDone }}</p>
+    {{ if .GetDayHistory.HasHistory }}
+    <table style="border: 0.5px solid gray;">
+      {{ range $row := .GetDayHistory.DayGrid }}
+      <tr style="height: 10px;">
+        {{ range $day := $row }}
+        <td style="width: 10px; margin: 1px; border: 0.5px solid white; {{ if not $day.IsZero }}background-color: green;{{ end }}">
+        </td>
+        {{ end }}
+      </tr>
+      {{ end }}
+    </table>
+    {{ end }}
   </details>
 </div>
 {{end}}

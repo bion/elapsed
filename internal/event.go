@@ -15,6 +15,7 @@ type Event struct {
 	Title                 string
 	Frequency             string
 	HowLongTimeUnixMillis int64
+	Occurrences           []Occurrence
 }
 
 type Occurrence struct {
@@ -82,6 +83,10 @@ func SortedFreqSpecs() []FreqSpec {
 	specs := slices.Collect(maps.Values(freqSpecs))
 	slices.SortFunc(specs, func(a, b FreqSpec) int { return int(a.GoodThreshold - b.GoodThreshold) })
 	return specs
+}
+
+func (e Event) GetDayHistory() DayHistory {
+	return DayHistory{Event: e}
 }
 
 func (e Event) LastDone() string {
@@ -167,7 +172,10 @@ func GetEvents() map[string]*[]Event {
 
 	events := make(map[int]*Event)
 	for eventRows.Next() {
-		e := &Event{}
+		occs := make([]Occurrence, 0)
+		e := &Event{
+			Occurrences: occs,
+		}
 		if err := eventRows.Scan(&e.Id, &e.Title, &e.Frequency); err != nil {
 			log.Fatal(err)
 		}
@@ -175,12 +183,9 @@ func GetEvents() map[string]*[]Event {
 	}
 
 	occRows, err := db.Db.Query(`
-SELECT event_id, time_unix_millis FROM (
-  SELECT event_id, time_unix_millis, ROW_NUMBER()
-  OVER (PARTITION BY event_id ORDER BY time_unix_millis DESC) AS rn
-  FROM occurrences
-)
-WHERE rn = 1;
+SELECT event_id, time_unix_millis
+FROM occurrences
+ORDER BY event_id, time_unix_millis DESC;
 `)
 
 	if err != nil {
@@ -199,7 +204,11 @@ WHERE rn = 1;
 			log.Fatalf("No event with ID %d", o.EventId)
 		}
 
-		e.HowLongTimeUnixMillis = o.TimeUnixMillis
+		if e.HowLongTimeUnixMillis == 0 {
+			e.HowLongTimeUnixMillis = o.TimeUnixMillis
+		}
+
+		e.Occurrences = append(e.Occurrences, o)
 	}
 
 	allEvents := slices.Collect(maps.Values(events))
