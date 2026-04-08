@@ -56,6 +56,63 @@ func (dh DayHistory) PrintGrid() {
 	}
 }
 
+func setToDayStart(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, time.Now().Location())
+}
+
+func sum[T float32 | float64 | int | int64](s []T) T {
+	var total T
+	for _, n := range s {
+		total += n
+	}
+	return total
+}
+
+func (dh DayHistory) CenteredAveragesGrid() [][]float32 {
+	averages := dh.CenteredAverages()
+	grid := make([][]float32, 7)
+	numWeeks := dh.NumWeeks()
+
+	for i := range grid {
+		grid[i] = make([]float32, numWeeks)
+	}
+
+	for i, v := range averages {
+		week := i / 7
+		day := i % 7
+		grid[day][week] = v
+	}
+
+	return grid
+}
+
+func (dh DayHistory) CenteredAverages() []float32 {
+	totalDays := int(math.Ceil(time.Since(dh.GetFirstSunday()).Hours() / 24))
+	dayCounts := make([]float32, totalDays)
+
+	startDay := setToDayStart(dh.GetFirstSunday())
+
+	for _, occ := range dh.Event.Occurrences {
+		o := time.UnixMilli(occ.TimeUnixMillis)
+		offset := int(o.Sub(startDay).Hours() / 24)
+		dayCounts[offset]++
+	}
+
+	averages := make([]float32, totalDays)
+	for i := range len(averages) {
+		if i == 0 {
+			averages[i] = sum(dayCounts[0:2]) / 2
+		} else if i == len(averages)-1 {
+			averages[i] = sum(dayCounts[i-1:i]) / 2
+		} else {
+			averages[i] = sum(dayCounts[i-1:i+2]) / 3
+		}
+	}
+
+	return averages
+}
+
 func (dh DayHistory) DayGrid() [][]time.Time {
 	if dh.grid != nil {
 		return dh.grid

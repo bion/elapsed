@@ -10,10 +10,10 @@
     <p>Last done {{ .LastDone }}</p>
     {{ if .GetDayHistory.HasHistory }}
     <table style="border: 0.5px solid gray;">
-      {{ range $row := .GetDayHistory.DayGrid }}
+      {{ range $row := .GetDayHistory.CenteredAveragesGrid }}
       <tr style="height: 10px;">
         {{ range $day := $row }}
-        <td style="width: 10px; margin: 1px; border: 0.5px solid white; {{ if not $day.IsZero }}background-color: green;{{ end }}">
+        <td style="width: 10px; margin: 1px; border: 0.5px solid white; background-color: green; opacity: {{ $day }}">
         </td>
         {{ end }}
       </tr>
