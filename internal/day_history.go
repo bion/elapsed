@@ -142,7 +142,7 @@ func (dh DayHistory) NumWeeks() int {
 }
 
 func (dh DayHistory) HasHistory() bool {
-	return len(dh.Event.Occurrences) > 0
+	return len(dh.Event.Occurrences) > 0 && dh.Event.Frequency == "daily"
 }
 
 func (dh DayHistory) GetFirstSunday() time.Time {

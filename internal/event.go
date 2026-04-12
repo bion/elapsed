@@ -46,6 +46,12 @@ var (
 			BorderlineThreshold: 60,
 			ExpiredThreshold:    72,
 		},
+		"2x-per-week": FreqSpec{
+			Name:                "2x-per-week",
+			GoodThreshold:       80,
+			BorderlineThreshold: 110,
+			ExpiredThreshold:    140,
+		},
 		"weekly": FreqSpec{
 			Name:                "weekly",
 			GoodThreshold:       168,
@@ -113,7 +119,7 @@ func (e Event) HowLong() string {
 	switch e.Frequency {
 	case "daily", "every-other-day":
 		return fmt.Sprintf("%d hours ago", int(math.Round(d.Hours())))
-	case "weekly", "monthly", "quarterly", "bi-annually", "annually":
+	case "2x-per-week", "weekly", "monthly", "quarterly", "bi-annually", "annually":
 		return fmt.Sprintf("%d days ago", int(math.Round(d.Hours()/24)))
 	default:
 		return fmt.Sprintf("%d hours ago", int(math.Round(d.Hours())))
