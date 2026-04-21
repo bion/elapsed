@@ -7,6 +7,8 @@ import (
 	"maps"
 	"math"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,6 +18,7 @@ type Event struct {
 	Frequency             string
 	HowLongTimeUnixMillis int64
 	Occurrences           []Occurrence
+	Position              int
 }
 
 type Occurrence struct {
@@ -30,57 +33,67 @@ type FreqSpec struct {
 	ExpiredThreshold    float64
 }
 
+type TimelinessStatus string
+
+const (
+	StatusJustDone   TimelinessStatus = "just-done"
+	StatusGood       TimelinessStatus = "good"
+	StatusBorderline TimelinessStatus = "borderline"
+	StatusExpired    TimelinessStatus = "expired"
+	StatusAbandoned  TimelinessStatus = "abandoned"
+)
+
 var (
 	localTZ, _ = time.LoadLocation("America/Los_Angeles")
 
 	freqSpecs = map[string]FreqSpec{
-		"daily": FreqSpec{
+		"daily": {
 			Name:                "daily",
 			GoodThreshold:       20,
 			BorderlineThreshold: 28,
 			ExpiredThreshold:    36,
 		},
-		"every-other-day": FreqSpec{
+		"every-other-day": {
 			Name:                "every-other-day",
 			GoodThreshold:       48,
 			BorderlineThreshold: 60,
 			ExpiredThreshold:    72,
 		},
-		"2x-per-week": FreqSpec{
+		"2x-per-week": {
 			Name:                "2x-per-week",
 			GoodThreshold:       80,
 			BorderlineThreshold: 110,
 			ExpiredThreshold:    140,
 		},
-		"weekly": FreqSpec{
+		"weekly": {
 			Name:                "weekly",
 			GoodThreshold:       168,
 			BorderlineThreshold: 192,
 			ExpiredThreshold:    214,
 		},
-		"monthly": FreqSpec{
+		"monthly": {
 			Name:                "monthly",
 			GoodThreshold:       744,
 			BorderlineThreshold: 800,
 			ExpiredThreshold:    900,
 		},
-		"quarterly": FreqSpec{
+		"quarterly": {
 			Name:                "quarterly",
 			GoodThreshold:       2160,
 			BorderlineThreshold: 2400,
 			ExpiredThreshold:    2700,
 		},
-		"bi-annually": FreqSpec{
+		"bi-annually": {
 			Name:                "bi-annually",
 			GoodThreshold:       4416,
 			BorderlineThreshold: 4600,
 			ExpiredThreshold:    4800,
 		},
-		"annually": FreqSpec{
+		"annually": {
 			Name:                "annually",
 			GoodThreshold:       8760,
 			BorderlineThreshold: 9500,
-			ExpiredThreshold:    1100,
+			ExpiredThreshold:    11000,
 		},
 	}
 )
@@ -127,28 +140,28 @@ func (e Event) HowLong() string {
 }
 
 func (e Event) TimelinessIndicator() string {
-	switch e.TimelinessStatus() {
-	case "just-done":
+	switch e.GetTimelinessStatus() {
+	case StatusJustDone:
 		return "⭐"
-	case "good":
+	case StatusGood:
 		return "🟩"
-	case "borderline":
+	case StatusBorderline:
 		return "🟨"
-	case "expired":
+	case StatusExpired:
 		return "🟧"
-	case "abandoned":
+	case StatusAbandoned:
 		return "🟥"
 	default:
-		log.Printf("Unknown TimelinessStatus: %s", e.TimelinessStatus())
+		log.Printf("Unknown TimelinessStatus: %s", e.GetTimelinessStatus())
 		return ""
 	}
 }
 
-func (e Event) TimelinessStatus() string {
+func (e Event) GetTimelinessStatus() TimelinessStatus {
 	d := time.Since(time.UnixMilli(e.HowLongTimeUnixMillis))
 
 	if d.Minutes() < 30 {
-		return "just-done"
+		return StatusJustDone
 	}
 
 	spec, ok := freqSpecs[e.Frequency]
@@ -159,17 +172,17 @@ func (e Event) TimelinessStatus() string {
 	}
 
 	if d.Hours() < spec.GoodThreshold {
-		return "good"
+		return StatusGood
 	} else if d.Hours() < spec.BorderlineThreshold {
-		return "borderline"
+		return StatusBorderline
 	} else if d.Hours() < spec.ExpiredThreshold {
-		return "expired"
+		return StatusExpired
 	} else {
-		return "abandoned"
+		return StatusAbandoned
 	}
 }
 
-func GetEvents() map[string]*[]Event {
+func GetEvents() map[string][]Event {
 	eventRows, err := db.Db.Query("SELECT * FROM events")
 	if err != nil {
 		log.Fatal(err)
@@ -182,7 +195,7 @@ func GetEvents() map[string]*[]Event {
 		e := &Event{
 			Occurrences: occs,
 		}
-		if err := eventRows.Scan(&e.Id, &e.Title, &e.Frequency); err != nil {
+		if err := eventRows.Scan(&e.Id, &e.Title, &e.Frequency, &e.Position); err != nil {
 			log.Fatal(err)
 		}
 		events[e.Id] = e
@@ -218,21 +231,62 @@ ORDER BY event_id, time_unix_millis DESC;
 	}
 
 	allEvents := slices.Collect(maps.Values(events))
-	slices.SortFunc(allEvents, func(a, b *Event) int { return a.Id - b.Id })
-
-	result := make(map[string]*[]Event)
+	result := make(map[string][]Event)
 
 	for _, event := range allEvents {
 		freqEvents, ok := result[event.Frequency]
 		if !ok {
-			newFreqEvents := make([]Event, 0)
-			freqEvents = &newFreqEvents
+			freqEvents = make([]Event, 0)
 		}
 
-		newSlice := append(*freqEvents, *event)
-		freqEvents = &newSlice
-		result[event.Frequency] = freqEvents
+		result[event.Frequency] = append(freqEvents, *event)
+	}
+
+	for _, siblingEvents := range result {
+		slices.SortFunc(siblingEvents, func(a, b Event) int { return a.Position - b.Position })
 	}
 
 	return result
+}
+
+func MoveEvent(id string, direction string) {
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		log.Fatalf("Failed to convert ID: %s", id)
+	}
+
+	allEvents := GetEvents()
+
+	var index int
+	var freq string
+	for frequency, events := range allEvents {
+		freq = frequency
+		index = slices.IndexFunc(events, func(e Event) bool { return e.Id == idInt })
+		if index != -1 {
+			break
+		}
+	}
+
+	events := allEvents[freq]
+
+	if index <= 0 || (direction == "down" && index == len(events)-1) {
+		return
+	}
+
+	event := events[index]
+
+	var other Event
+	if direction == "down" {
+		other = events[index+1]
+	} else {
+		other = events[index-1]
+	}
+
+	builder := strings.Builder{}
+	builder.WriteString("BEGIN TRANSACTION;")
+	fmt.Fprintf(&builder, "UPDATE events SET position = %d WHERE id = %d;", other.Position, idInt)
+	fmt.Fprintf(&builder, "UPDATE events SET position = %d WHERE id = %d;", event.Position, other.Id)
+	builder.WriteString("END TRANSACTION;")
+
+	db.Db.Exec(builder.String())
 }

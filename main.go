@@ -66,7 +66,15 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Create Event: title=%s, frequency=%s", title, frequency)
 
-	_, err := db.Db.Exec("INSERT INTO events (title, frequency) VALUES (?, ?)", title, frequency)
+	events, ok := internal.GetEvents()[frequency]
+	var position int
+	if ok {
+		position = len(events) + 1
+	} else {
+		position = 1
+	}
+
+	_, err := db.Db.Exec("INSERT INTO events (title, frequency, position) VALUES (?, ?, ?)", title, frequency, position)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,8 +94,21 @@ func occur(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func up(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	internal.MoveEvent(id, "up")
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func down(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	internal.MoveEvent(id, "down")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 type IndexPageModel struct {
-	Events          map[string]*[]internal.Event
+	Events          map[string][]internal.Event
 	SortedFreqSpecs []internal.FreqSpec
 }
 
@@ -132,6 +153,8 @@ func main() {
 	mux.HandleFunc("GET /new", newOne)
 	mux.HandleFunc("GET /events/{id}/edit", edit)
 	mux.HandleFunc("POST /events/{id}", update)
+	mux.HandleFunc("POST /events/{id}/up", up)
+	mux.HandleFunc("POST /events/{id}/down", down)
 	mux.HandleFunc("POST /create", create)
 	mux.HandleFunc("POST /occur", occur)
 	mux.HandleFunc("GET /", index)

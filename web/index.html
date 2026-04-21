@@ -4,10 +4,18 @@
     <input type="hidden" name="id" value="{{.Id}}" />
     <input type="submit" value="do" />
   </form>
+
   <details>
     <summary style="list-style: none;">{{ .TimelinessIndicator }} {{.Title}}: {{.HowLong}}</summary>
-    <a href="/events/{{ .Id }}/edit">edit</a>
-    <p>Last done {{ .LastDone }}</p>
+    <span style="display: flex">
+      <a href="/events/{{ .Id }}/edit" style="margin-right: 1rem">edit</a>
+
+      <form action="/events/{{ .Id }}/up" method="POST" style="margin-right: 1rem"><input type="submit" value="up" /></form>
+      <form action="/events/{{ .Id }}/down" method="POST"><input type="submit" value="down" /></form>
+    </span>
+
+    <p>{{ len .Occurrences }} occurrences, most recently {{ .LastDone }}</p>
+
     {{ if .GetDayHistory.HasHistory }}
     <table style="border: 0.5px solid gray;">
       {{ range $row := .GetDayHistory.CenteredAveragesGrid }}

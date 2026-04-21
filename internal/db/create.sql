@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL UNIQUE,
-    frequency TEXT NOT NULL
+    frequency TEXT NOT NULL,
+    position INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS occurrences (
